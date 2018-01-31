@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ConsoleApp1
 {
@@ -13,19 +14,18 @@ namespace ConsoleApp1
             string s = "HackerRank ";
 
             List<string> contents = new List<string>();
-            string line; 
+            string line;
 
-            for (int b = 0; b < 2; b++)
+            for (int b = 0; b < 3; b++)
             {
                 line = Console.ReadLine();
                 contents.Add(line);
             }
-            
-            foreach (string p in contents)
-            {
-                Console.WriteLine(p);
-            }
-            
+
+            Console.WriteLine(Convert.ToInt16(contents.ElementAt(0)) + i);
+            Console.WriteLine(Convert.ToDouble(contents.ElementAt(1)) + d);
+            Console.WriteLine(s + contents.ElementAt(2));
+
         }
     }
 }
