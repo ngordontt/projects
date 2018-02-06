@@ -22,6 +22,11 @@ public class Car {
         nameOfCar = "Lucy";
     }
 
+    public double getMaxfuel(){
+        return this.maxfuel;
+    }
+
+
     public  void  printVariables(){
         System.out.println(MaxSpeed);
         System.out.println(MinSpeed);
