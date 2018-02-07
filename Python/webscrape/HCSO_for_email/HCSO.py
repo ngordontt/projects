@@ -1,59 +1,115 @@
 import urllib.request
 import urllib.parse
-
-uri = 'http://apps.hcso.org/PropertySale.aspx'
-
+import html5lib
+from bs4 import BeautifulSoup
+import re
 
 headers = {
-    'Accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
-    'Accept-Encoding:gzip, deflate'
-    'Accept-Language:en-US,en;q=0.9'
-    'Cache-Control:max-age=0'
-    'Connection:keep-alive'
-    'Content-Length:18299'
-    'Content-Type:application/x-www-form-urlencoded'
-    'Host:apps.hcso.org'
-    'Origin:http://apps.hcso.org'
-    'Referer:http://apps.hcso.org/PropertySale.aspx'
-    'User-Agent:Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.52 Safari/537.36'
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.17 (KHTML, like Gecko)  Chrome/24.0.1312.57 Safari/537.17',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Accept-Encoding': 'gzip,deflate,sdch',
+    'Accept-Language': 'en-US,en;q=0.8',
+    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3'
 }
 
-formFields = (
-    ToolkitScriptManager1_TSM:;;AjaxControlToolkit, Version=4.5.7.1002, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:68b9799d-7de1-4e45-9186-1ac0f5237ece:ea597d4b:b25378d2;Telerik.Web.UI:en-US:b7c0ed1c-66b0-411f-9d0a-18294380a077:16e4e7cd:f7645509:22a6274a:ed16cbdc:33715776:24ee1bba:e330518b:2003d0b8:c128760b:88144a7a:1e771326:c8618e41:1a73651d:333f8d94:6d43f6d9:f46195d3:6b3f73b3:b7778d6c:58366029
-    __EVENTTARGET:
-    __EVENTARGUMENT:
-    __VIEWSTATE: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
-    __VIEWSTATEGENERATOR:80ACBCF3
-    __EVENTVALIDATION:T7rTcHAI6HDP/7iMLDWRnTJw7IuVUDrOH0EngE3QRtUgzZ/mgdN59xVnWp12X/AB4eOa8bo5o+0zy5LUqHg3KYO0v1/d6rvmHoN1wOIrylK5F+hUxr40QknPrbKJDJhra6dhuSSlXlazCw5quQX8X4haYj1w/9clbW6j/J2JBq+3KgGpSFiEOqXOFCUF4YHQPuban/WVuCjUwE6Q221aA+7EMS7seBcpqIWytHxkVYrQrlOkBRkBH+qmfmq8RqjKYT/4UbJUAPp9vLaLCftg8hMUWt/w6zdOJr9YzANtYLLvtsKYFnqIWwicT1TOALZe+/xXhmNsUj1MT9O4uyGZRjDgTuzEbtONB2tWj/CqkBT3IajX87FXV640VJnCWavqB7wrJMiOaDfqLkmVyHKMp/cntacchexnG5rsM1ixYNZBPp1S6X1m0CFtjnMZERPscC3SjM6RxkK6bf3u/9trf9kM53Di5RuXtjZF3DbTay4=
-    Menu1_RadMenu1_ClientState:{"logEntries":[],"selectedItemIndex":"0"}
-    btnCurrent:Upcoming Foreclosures
-    btnCurrent_ClientState:{"text":"Upcoming Foreclosures","value":"","checked":false,"target":"","navigateUrl":"","commandName":"","commandArgument":"","autoPostBack":true,"selectedToggleStateIndex":0,"validationGroup":null,"readOnly":false,"primary":false,"enabled":true}
-    btnSold_ClientState:{"text":"Sold Foreclosures","value":"","checked":false,"target":"","navigateUrl":"","commandName":"","commandArgument":"","autoPostBack":true,"selectedToggleStateIndex":0,"validationGroup":null,"readOnly":false,"primary":false,"enabled":true}
-    btnDeliquent_ClientState:{"text":"Deliquent  Tax Sales","value":"","checked":false,"target":"","navigateUrl":"","commandName":"","commandArgument":"","autoPostBack":true,"selectedToggleStateIndex":0,"validationGroup":null,"readOnly":false,"primary":false,"enabled":true}
-    btnCertificate_ClientState:{"text":"Tax Lein Certificate Sales","value":"","checked":false,"target":"","navigateUrl":"","commandName":"","commandArgument":"","autoPostBack":true,"selectedToggleStateIndex":0,"validationGroup":null,"readOnly":false,"primary":false,"enabled":true}
-    btnAuditor_ClientState:{"text":"Auditor","value":"","checked":false,"target":"_blank","navigateUrl":"","commandName":"","commandArgument":"","autoPostBack":true,"selectedToggleStateIndex":0,"validationGroup":null,"readOnly":false,"primary":false,"enabled":true}
-    btnClerks_ClientState:{"text":"Clerk of Courts","value":"","checked":false,"target":"","navigateUrl":"","commandName":"","commandArgument":"","autoPostBack":true,"selectedToggleStateIndex":0,"validationGroup":null,"readOnly":false,"primary":false,"enabled":true}
-    BTNiNDEX_ClientState:{"text":"Court Index","value":"","checked":false,"target":"","navigateUrl":"","commandName":"","commandArgument":"","autoPostBack":true,"selectedToggleStateIndex":0,"validationGroup":null,"readOnly":false,"primary":false,"enabled":true}
-    ddlDate_ClientState:
-    txtCaseNo:
-    txtCaseNo_ClientState:{"enabled":true,"emptyMessage":"","validationText":"","valueAsString":"","lastSetTextBoxValue":""}
-    txtAddress:
-    txtAddress_ClientState:{"enabled":true,"emptyMessage":"","validationText":"","valueAsString":"","lastSetTextBoxValue":""}
-    ddlTown_ClientState:
-    btnGo_ClientState:{"text":"GO","value":"","checked":false,"target":"","navigateUrl":"","commandName":"","commandArgument":"","autoPostBack":true,"selectedToggleStateIndex":0,"validationGroup":null,"readOnly":false,"primary":false,"enabled":true}
-    GridView1_ClientState:
-    GridView3_ClientState:
-    GridView4_ClientState:
+
+class MyOpener(urllib.request.FancyURLopener):
+    version = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17'
+
+
+myopener = MyOpener()
+url = 'http://apps.hcso.org/PropertySale.aspx'
+# first HTTP request without form data
+f = myopener.open(url)
+soup_dummy = BeautifulSoup(f, 'html.parser')
+# parse and retrieve two vital form values
+viewstate = soup_dummy.select("#__VIEWSTATE")[0]['value']
+viewstategen = soup_dummy.select("#__VIEWSTATEGENERATOR")[0]['value']
+viewValid = soup_dummy.select("#__EVENTVALIDATION")[0]['value']
+viewTSM= soup_dummy.select("#ToolkitScriptManager1_TSM")[0]['value']
+
+
+# search for the string 'input' to find the form data
+formData = (
+    ('__VIEWSTATE', viewstate),
+    ('__VIEWSTATEGENERATOR', viewstategen),
+    ('__EVENTTARGET', 'btnCurrent'),
+    ('ToolkitScriptManager1_TSM', viewTSM),
+    ('__EVENTVALIDATION', viewValid)
 )
 
-encodedFields = urllib.parse.urlencode(formFields)
-req = urllib.Request(uri, encodedFields, headers)
-f= urllib.urlopen(req)
+
+# second HTTP request with form data
+data = urllib.parse.urlencode(formData)
+data = data.encode('ascii')  # data should be bytes
+req = urllib.request.Request(url, data)
+with urllib.request.urlopen(req) as response:
+    the_page = response.read()
+
+
+# parse page to get form data
+soup = BeautifulSoup(the_page, 'html.parser')
+viewstate = soup.select("#__VIEWSTATE")[0]['value']
+viewstategen = soup.select("#__VIEWSTATEGENERATOR")[0]['value']
+viewValid = soup.select("#__EVENTVALIDATION")[0]['value']
+
+# find value for 3 date choice and update form data
+Foreclosure_dates = soup.find_all('ul')
+Foreclosure_date = Foreclosure_dates[8].find_all('li')[3].text.strip()
+Foreclosure_ch = re.findall(r'[^/]+(?://[^/]*)*', Foreclosure_date)
+date = Foreclosure_ch[0]+"%2F"+Foreclosure_ch[1]+"%2F"+Foreclosure_ch[2]
+eventag = {"type": 1, "index": 3, "text": "", "value": ""}
+eventag['text'] = date
+eventag
+
+# formdata with date choice
+formData = (
+    ('__VIEWSTATE', viewstate),
+    ('__VIEWSTATEGENERATOR', viewstategen),
+    ('__EVENTTARGET', 'ddlDate'),
+    ('__EVENTARGUMENT', eventag),
+    ('ToolkitScriptManager1_TSM', viewTSM),
+    ('__EVENTVALIDATION', viewValid)
+)
+
+
+# 3rd HTTP request with form data
+data = urllib.parse.urlencode(formData)
+data = data.encode('ascii')  # data should be bytes
+req = urllib.request.Request(url, data)
+with urllib.request.urlopen(req) as response:
+    the_page = response.read()
+
+# parse page to get form data
+soup = BeautifulSoup(the_page, 'html.parser')
+viewstate = soup.select("#__VIEWSTATE")[0]['value']
+viewstategen = soup.select("#__VIEWSTATEGENERATOR")[0]['value']
+viewValid = soup.select("#__EVENTVALIDATION")[0]['value']
+
+# formdata with go button click
+formData = (
+    ('__VIEWSTATE', viewstate),
+    ('__VIEWSTATEGENERATOR', viewstategen),
+    ('__EVENTTARGET', 'btnGo'),
+    ('ToolkitScriptManager1_TSM', viewTSM),
+    ('__EVENTVALIDATION', viewValid)
+)
+
+# 4th HTTP request with form data
+data = urllib.parse.urlencode(formData)
+data = data.encode('ascii')  # data should be bytes
+req = urllib.request.Request(url, data)
+with urllib.request.urlopen(req) as response:
+    the_page = response.read()
+
+# parse page to get form data
+soup = BeautifulSoup(the_page, 'html.parser')
 
 try:
-  fout = open('tmp.htm', 'w')
+    fout = open('tmp.htm', 'w')
 except:
-  print('Could not open output file\n')
+    print('Could not open output file\n')
 
-fout.writelines(f.readlines())
-fout.close()  
+fout.writelines(soup.readlines())
+fout.close()
