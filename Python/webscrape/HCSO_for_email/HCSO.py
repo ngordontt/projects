@@ -1,6 +1,5 @@
 import urllib.request
 import urllib.parse
-import html5lib
 from bs4 import BeautifulSoup
 import re
 
@@ -91,20 +90,22 @@ viewValid = soup.select("#__EVENTVALIDATION")[0]['value']
 formData = (
     ('__VIEWSTATE', viewstate),
     ('__VIEWSTATEGENERATOR', viewstategen),
-    ('__EVENTTARGET', 'btnGo'),
+    ('btnGo','GO'),
     ('ToolkitScriptManager1_TSM', viewTSM),
-    ('__EVENTVALIDATION', viewValid)
+    ('__EVENTVALIDATION', viewValid),
+    ('ddlDate_ClientState','')
 )
 
 # 4th HTTP request with form data
-data = urllib.parse.urlencode(formData)
-data = data.encode('ascii')  # data should be bytes
-req = urllib.request.Request(url, data)
-with urllib.request.urlopen(req) as response:
-    the_page = response.read()
+data_fin = urllib.parse.urlencode(formData)
+data_fin = data_fin.encode('ascii')  # data should be bytes
+req_fin = urllib.request.Request(url, data_fin)
+with urllib.request.urlopen(req_fin) as response:
+    the_page_fin = response.read()
 
 # parse page to get form data
-soup = BeautifulSoup(the_page, 'html.parser')
+soup_fin = BeautifulSoup(the_page_fin, 'html.parser')
+soup_fin
 
 try:
     fout = open('tmp.htm', 'w')
