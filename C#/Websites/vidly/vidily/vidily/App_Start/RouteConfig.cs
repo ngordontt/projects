@@ -13,6 +13,14 @@ namespace vidily
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
+            //custom router
+            routes.MapRoute(
+                "MoviesByReleaseDate",
+                "Movies/released/{year}/{month}",
+                new { Controller = "Movies", action = "ByReleaseDate" },
+                //this set limits on the amount of characters that are needed
+                new { year = @"\d{4}", month = @"\d{2}" }); //@ works as an escape sequence 
+
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
